@@ -5,7 +5,14 @@
 			{
 				"name": "LKP_Get_SQL_Tables_Config",
 				"type": "Lookup",
-				"dependsOn": [],
+				"dependsOn": [
+					{
+						"activity": "LKP_Get_Watermark",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
 				"policy": {
 					"timeout": "0.12:00:00",
 					"retry": 0,
@@ -291,6 +298,36 @@
 							}
 						}
 					]
+				}
+			},
+			{
+				"name": "LKP_Get_Watermark",
+				"type": "Lookup",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "AzureSqlSource",
+						"sqlReaderQuery": "SELECT * FROM control.Watermark",
+						"queryTimeout": "02:00:00",
+						"partitionOption": "None"
+					},
+					"dataset": {
+						"referenceName": "DS_SQLDB_ASQL_Target",
+						"type": "DatasetReference",
+						"parameters": {
+							"SchemaName": "control",
+							"TableName": "Watermark"
+						}
+					},
+					"firstRowOnly": false
 				}
 			}
 		],
