@@ -1,0 +1,9 @@
+{
+	"name": "ADF-SalesProject-MK",
+	"location": "centralindia",
+	"identity": {
+		"type": "SystemAssigned",
+		"principalId": "fef84ebb-ea05-41f5-9d23-9db17259658e",
+		"tenantId": "d583b88f-9383-477e-aaa0-c9cff499093c"
+	}
+}
