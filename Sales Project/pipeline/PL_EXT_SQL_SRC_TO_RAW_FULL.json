@@ -114,7 +114,7 @@
 									"type": "DatasetReference",
 									"parameters": {
 										"TableName": {
-											"value": "@item().sourceTableName",
+											"value": "@item().SourceTableName",
 											"type": "Expression"
 										}
 									}
@@ -378,6 +378,7 @@
 								],
 								"storeSettings": {
 									"type": "AzureBlobFSReadSettings",
+									"recursive": true,
 									"enablePartitionDiscovery": false
 								},
 								"formatSettings": {
