@@ -1,0 +1,26 @@
+{
+	"name": "DS_ADLS_BINARY_DELETE",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "LS_ADLS_SalesProject_MK",
+			"type": "LinkedServiceReference"
+		},
+		"parameters": {
+			"FolderPath": {
+				"type": "string"
+			},
+			"Container": {
+				"type": "string"
+			}
+		},
+		"annotations": [],
+		"type": "Binary",
+		"typeProperties": {
+			"location": {
+				"type": "AzureBlobFSLocation",
+				"folderPath": "@dataset().FolderPath",
+				"fileSystem": "@dataset().Container"
+			}
+		}
+	}
+}
