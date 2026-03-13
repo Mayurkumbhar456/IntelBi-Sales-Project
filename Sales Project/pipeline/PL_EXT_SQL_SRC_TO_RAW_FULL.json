@@ -74,7 +74,7 @@
 								"source": {
 									"type": "AzureSqlSource",
 									"sqlReaderQuery": {
-										"value": "@if(\n  equals(item().LoadType, 'INCREMENTAL'),\n  concat('SELECT * FROM ', item().SourceSchema, '.', item().SourceTableName, \n         ' WHERE UPDATE_DT > ''', \n         activity('LKP_Get_SQL_Tables_Config').output.value[0].WatermarkValue, \n         ''''),\n  concat('SELECT * FROM ', item().SourceSchema, '.', item().SourceTableName)\n)",
+										"value": "@if(\n  equals(item().LoadType, 'INCREMENTAL'),\n  concat('SELECT * FROM [', item().SourceSchema, '].[', item().SourceTableName, '] WHERE UPDATE_DT > ''1900-01-01'''),\n  concat('SELECT * FROM [', item().SourceSchema, '].[', item().SourceTableName, ']')\n)",
 										"type": "Expression"
 									},
 									"queryTimeout": "02:00:00",
