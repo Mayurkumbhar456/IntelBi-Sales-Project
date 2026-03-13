@@ -417,10 +417,13 @@
 										"userProperties": [],
 										"typeProperties": {
 											"dataset": {
-												"referenceName": "DS_ADLS_RAW_CSV",
+												"referenceName": "DS_ADLS_RAW_DELETE",
 												"type": "DatasetReference",
 												"parameters": {
-													"FolderPath": "@item().TargetFolderPath",
+													"FolderPath": {
+														"value": "@item().TargetFolderPath",
+														"type": "Expression"
+													},
 													"Container": "@item().TargetContainer"
 												}
 											},
