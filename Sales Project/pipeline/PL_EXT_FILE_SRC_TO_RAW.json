@@ -5,14 +5,7 @@
 			{
 				"name": "LKP_Get_File_Config",
 				"type": "Lookup",
-				"dependsOn": [
-					{
-						"activity": "FE_Loop_Files",
-						"dependencyConditions": [
-							"Succeeded"
-						]
-					}
-				],
+				"dependsOn": [],
 				"policy": {
 					"timeout": "0.12:00:00",
 					"retry": 0,
@@ -42,14 +35,93 @@
 			{
 				"name": "FE_Loop_Files",
 				"type": "ForEach",
-				"dependsOn": [],
+				"dependsOn": [
+					{
+						"activity": "LKP_Get_File_Config",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
 				"userProperties": [],
 				"typeProperties": {
 					"items": {
 						"value": "@activity('LKP_Get_File_Config').output.value",
 						"type": "Expression"
 					},
-					"batchCount": 4
+					"batchCount": 4,
+					"activities": [
+						{
+							"name": "CPY_FILE_To_RAW",
+							"type": "Copy",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"source": {
+									"type": "DelimitedTextSource",
+									"storeSettings": {
+										"type": "AzureBlobStorageReadSettings",
+										"recursive": true,
+										"enablePartitionDiscovery": false
+									},
+									"formatSettings": {
+										"type": "DelimitedTextReadSettings"
+									}
+								},
+								"sink": {
+									"type": "DelimitedTextSink",
+									"storeSettings": {
+										"type": "AzureBlobFSWriteSettings"
+									},
+									"formatSettings": {
+										"type": "DelimitedTextWriteSettings",
+										"quoteAllText": true,
+										"fileExtension": ".txt"
+									}
+								},
+								"enableStaging": false,
+								"translator": {
+									"type": "TabularTranslator",
+									"typeConversion": true,
+									"typeConversionSettings": {
+										"allowDataTruncation": true,
+										"treatBooleanAsNumber": false
+									}
+								}
+							},
+							"inputs": [
+								{
+									"referenceName": "DS_BLOB_CSV",
+									"type": "DatasetReference",
+									"parameters": {
+										"FolderPath": "@item().SourceSchema",
+										"FileName": "@item().SourceTableName"
+									}
+								}
+							],
+							"outputs": [
+								{
+									"referenceName": "DS_ADLS_RAW_CSV",
+									"type": "DatasetReference",
+									"parameters": {
+										"FolderPath": "@item().TargetFolderPath",
+										"FileName": {
+											"value": "@concat(item().TargetFileName, '_', formatDateTime(utcNow(), 'yyyyMMddHHmmss'), '.csv')",
+											"type": "Expression"
+										},
+										"Container": "@item().TargetContainer"
+									}
+								}
+							]
+						}
+					]
 				}
 			}
 		],
