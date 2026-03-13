@@ -160,7 +160,7 @@
 										"userProperties": [],
 										"typeProperties": {
 											"dataset": {
-												"referenceName": "DS_ADLS_RAW_DELETE",
+												"referenceName": "DS_ADLS_BINARY_DELETE",
 												"type": "DatasetReference",
 												"parameters": {
 													"FolderPath": {
