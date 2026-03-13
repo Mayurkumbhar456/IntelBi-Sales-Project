@@ -156,7 +156,10 @@
 										"type": "String"
 									},
 									"RejectCount": {
-										"value": "0",
+										"value": {
+											"value": "0",
+											"type": "Expression"
+										},
 										"type": "Int32"
 									},
 									"SourceCount": {
@@ -172,7 +175,10 @@
 										"type": "DateTime"
 									},
 									"Status": {
-										"value": "Success",
+										"value": {
+											"value": "Success",
+											"type": "Expression"
+										},
 										"type": "String"
 									},
 									"TargetCount": {
