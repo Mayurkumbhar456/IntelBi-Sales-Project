@@ -61,14 +61,7 @@
 						{
 							"name": "CPY_SQL_To_RAW",
 							"type": "Copy",
-							"dependsOn": [
-								{
-									"activity": "DEL_Target_After_Archive",
-									"dependencyConditions": [
-										"Succeeded"
-									]
-								}
-							],
+							"dependsOn": [],
 							"policy": {
 								"timeout": "0.12:00:00",
 								"retry": 0,
@@ -90,7 +83,8 @@
 								"sink": {
 									"type": "DelimitedTextSink",
 									"storeSettings": {
-										"type": "AzureBlobFSWriteSettings"
+										"type": "AzureBlobFSWriteSettings",
+										"copyBehavior": "FlattenHierarchy"
 									},
 									"formatSettings": {
 										"type": "DelimitedTextWriteSettings",
@@ -130,7 +124,7 @@
 											"type": "Expression"
 										},
 										"FileName": {
-											"value": "@concat(item().TargetFileName, '_', formatDateTime(utcNow(), 'yyyyMMddHHmmss'), '.csv')",
+											"value": "@concat(item().TargetFileName, '.csv')",
 											"type": "Expression"
 										},
 										"Container": {
@@ -355,6 +349,8 @@
 						{
 							"name": "DEL_Target_After_Archive",
 							"type": "Delete",
+							"state": "Inactive",
+							"onInactiveMarkAs": "Succeeded",
 							"dependsOn": [],
 							"policy": {
 								"timeout": "0.12:00:00",
