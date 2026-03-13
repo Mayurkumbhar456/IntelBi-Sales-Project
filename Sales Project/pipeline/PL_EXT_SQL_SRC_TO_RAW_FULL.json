@@ -3,6 +3,36 @@
 	"properties": {
 		"activities": [
 			{
+				"name": "LKP_Get_Watermark",
+				"type": "Lookup",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "AzureSqlSource",
+						"sqlReaderQuery": "SELECT * FROM control.Watermark",
+						"queryTimeout": "02:00:00",
+						"partitionOption": "None"
+					},
+					"dataset": {
+						"referenceName": "DS_SQLDB_ASQL_Target",
+						"type": "DatasetReference",
+						"parameters": {
+							"SchemaName": "control",
+							"TableName": "Watermark"
+						}
+					},
+					"firstRowOnly": false
+				}
+			},
+			{
 				"name": "LKP_Get_SQL_Tables_Config",
 				"type": "Lookup",
 				"dependsOn": [
@@ -24,7 +54,7 @@
 				"typeProperties": {
 					"source": {
 						"type": "AzureSqlSource",
-						"sqlReaderQuery": "SELECT * FROM control.PipelineConfig \nWHERE SourceType = 'SQL' AND IsActive = 1",
+						"sqlReaderQuery": "SELECT * FROM control.PipelineConfig WHERE SourceType = 'SQL' AND IsActive = 1",
 						"queryTimeout": "02:00:00",
 						"partitionOption": "None"
 					},
@@ -58,6 +88,107 @@
 					},
 					"batchCount": 4,
 					"activities": [
+						{
+							"name": "GM_Check_Target_Files",
+							"type": "GetMetadata",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"dataset": {
+									"referenceName": "DS_ADLS_RAW_CSV",
+									"type": "DatasetReference",
+									"parameters": {
+										"FolderPath": {
+											"value": "@item().TargetFolderPath",
+											"type": "Expression"
+										},
+										"Container": {
+											"value": "@item().TargetContainer",
+											"type": "Expression"
+										}
+									}
+								},
+								"fieldList": [
+									"childItems"
+								],
+								"storeSettings": {
+									"type": "AzureBlobFSReadSettings",
+									"recursive": true,
+									"enablePartitionDiscovery": false
+								},
+								"formatSettings": {
+									"type": "DelimitedTextReadSettings"
+								}
+							}
+						},
+						{
+							"name": "IF_Files_Exist",
+							"type": "IfCondition",
+							"dependsOn": [
+								{
+									"activity": "GM_Check_Target_Files",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"userProperties": [],
+							"typeProperties": {
+								"expression": {
+									"value": "@greater(length(activity('GM_Check_Target_Files').output.childItems), 0)",
+									"type": "Expression"
+								},
+								"ifTrueActivities": [
+									{
+										"name": "DEL_Target_After_Archive",
+										"type": "Delete",
+										"dependsOn": [],
+										"policy": {
+											"timeout": "0.12:00:00",
+											"retry": 0,
+											"retryIntervalInSeconds": 30,
+											"secureOutput": false,
+											"secureInput": false
+										},
+										"userProperties": [],
+										"typeProperties": {
+											"dataset": {
+												"referenceName": "DS_ADLS_RAW_DELETE",
+												"type": "DatasetReference",
+												"parameters": {
+													"FolderPath": {
+														"value": "@item().TargetFolderPath",
+														"type": "Expression"
+													},
+													"Container": {
+														"value": "@item().TargetContainer",
+														"type": "Expression"
+													}
+												}
+											},
+											"enableLogging": false,
+											"storeSettings": {
+												"type": "AzureBlobFSReadSettings",
+												"recursive": true,
+												"wildcardFolderPath": {
+													"value": "@item().TargetFolderPath",
+													"type": "Expression"
+												},
+												"wildcardFileName": "*.csv",
+												"enablePartitionDiscovery": false
+											}
+										}
+									}
+								]
+							}
+						},
 						{
 							"name": "CPY_SQL_To_RAW",
 							"type": "Copy",
@@ -95,7 +226,7 @@
 									"formatSettings": {
 										"type": "DelimitedTextWriteSettings",
 										"quoteAllText": true,
-										"fileExtension": ".txt"
+										"fileExtension": ".csv"
 									}
 								},
 								"enableStaging": false,
@@ -351,126 +482,8 @@
 								"referenceName": "LS_SQLDB_ASQL_Target",
 								"type": "LinkedServiceReference"
 							}
-						},
-						{
-							"name": "GM_Check_Target_Files",
-							"type": "GetMetadata",
-							"dependsOn": [],
-							"policy": {
-								"timeout": "0.12:00:00",
-								"retry": 0,
-								"retryIntervalInSeconds": 30,
-								"secureOutput": false,
-								"secureInput": false
-							},
-							"userProperties": [],
-							"typeProperties": {
-								"dataset": {
-									"referenceName": "DS_ADLS_RAW_CSV",
-									"type": "DatasetReference",
-									"parameters": {
-										"FolderPath": "@item().TargetFolderPath",
-										"Container": "@item().TargetContainer"
-									}
-								},
-								"fieldList": [
-									"childItems"
-								],
-								"storeSettings": {
-									"type": "AzureBlobFSReadSettings",
-									"recursive": true,
-									"enablePartitionDiscovery": false
-								},
-								"formatSettings": {
-									"type": "DelimitedTextReadSettings"
-								}
-							}
-						},
-						{
-							"name": "IF_Files_Exist",
-							"type": "IfCondition",
-							"dependsOn": [
-								{
-									"activity": "GM_Check_Target_Files",
-									"dependencyConditions": [
-										"Succeeded"
-									]
-								}
-							],
-							"userProperties": [],
-							"typeProperties": {
-								"expression": {
-									"value": "@greater(length(activity('GM_Check_Target_Files').output.childItems), 0)",
-									"type": "Expression"
-								},
-								"ifTrueActivities": [
-									{
-										"name": "DEL_Target_After_Archive",
-										"type": "Delete",
-										"dependsOn": [],
-										"policy": {
-											"timeout": "0.12:00:00",
-											"retry": 0,
-											"retryIntervalInSeconds": 30,
-											"secureOutput": false,
-											"secureInput": false
-										},
-										"userProperties": [],
-										"typeProperties": {
-											"dataset": {
-												"referenceName": "DS_ADLS_RAW_DELETE",
-												"type": "DatasetReference",
-												"parameters": {
-													"FolderPath": {
-														"value": "@item().TargetFolderPath",
-														"type": "Expression"
-													},
-													"Container": "@item().TargetContainer"
-												}
-											},
-											"enableLogging": false,
-											"storeSettings": {
-												"type": "AzureBlobFSReadSettings",
-												"recursive": true,
-												"wildcardFileName": "*.csv",
-												"enablePartitionDiscovery": false
-											}
-										}
-									}
-								]
-							}
 						}
 					]
-				}
-			},
-			{
-				"name": "LKP_Get_Watermark",
-				"type": "Lookup",
-				"dependsOn": [],
-				"policy": {
-					"timeout": "0.12:00:00",
-					"retry": 0,
-					"retryIntervalInSeconds": 30,
-					"secureOutput": false,
-					"secureInput": false
-				},
-				"userProperties": [],
-				"typeProperties": {
-					"source": {
-						"type": "AzureSqlSource",
-						"sqlReaderQuery": "SELECT * FROM control.Watermark",
-						"queryTimeout": "02:00:00",
-						"partitionOption": "None"
-					},
-					"dataset": {
-						"referenceName": "DS_SQLDB_ASQL_Target",
-						"type": "DatasetReference",
-						"parameters": {
-							"SchemaName": "control",
-							"TableName": "Watermark"
-						}
-					},
-					"firstRowOnly": false
 				}
 			}
 		],
