@@ -1,0 +1,88 @@
+{
+	"name": "DS_ADLS_RAW_DELETE",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "LS_ADLS_SalesProject_MK",
+			"type": "LinkedServiceReference"
+		},
+		"parameters": {
+			"FolderPath": {
+				"type": "string"
+			},
+			"Container": {
+				"type": "string"
+			}
+		},
+		"annotations": [],
+		"type": "DelimitedText",
+		"typeProperties": {
+			"location": {
+				"type": "AzureBlobFSLocation",
+				"fileName": "@dataset().Container",
+				"folderPath": {
+					"value": "@dataset().FolderPath",
+					"type": "Expression"
+				},
+				"fileSystem": "raw"
+			},
+			"columnDelimiter": ",",
+			"escapeChar": "\\",
+			"firstRowAsHeader": true,
+			"quoteChar": "\""
+		},
+		"schema": [
+			{
+				"name": "BRANCH_CODE",
+				"type": "String"
+			},
+			{
+				"name": "ADDRESS1",
+				"type": "String"
+			},
+			{
+				"name": "ADDRESS1_MB",
+				"type": "String"
+			},
+			{
+				"name": "ADDRESS2",
+				"type": "String"
+			},
+			{
+				"name": "ADDRESS2_MB",
+				"type": "String"
+			},
+			{
+				"name": "CITY",
+				"type": "String"
+			},
+			{
+				"name": "CITY_MB",
+				"type": "String"
+			},
+			{
+				"name": "PROV_STATE",
+				"type": "String"
+			},
+			{
+				"name": "PROV_STATE_MB",
+				"type": "String"
+			},
+			{
+				"name": "POSTAL_ZONE",
+				"type": "String"
+			},
+			{
+				"name": "COUNTRY_CODE",
+				"type": "String"
+			},
+			{
+				"name": "ORGANIZATION_CODE",
+				"type": "String"
+			},
+			{
+				"name": "WAREHOUSE_BRANCH_CODE",
+				"type": "String"
+			}
+		]
+	}
+}
