@@ -118,62 +118,6 @@
 			"dependsOn": []
 		},
 		{
-			"name": "[concat(parameters('factoryName'), '/LS_SQLDB_ASQL_Target')]",
-			"type": "Microsoft.DataFactory/factories/linkedServices",
-			"apiVersion": "2018-06-01",
-			"properties": {
-				"annotations": [],
-				"type": "AzureSqlDatabase",
-				"typeProperties": {
-					"server": "[parameters('LS_SQLDB_ASQL_Target_properties_typeProperties_server')]",
-					"database": "[parameters('LS_SQLDB_ASQL_Target_properties_typeProperties_database')]",
-					"encrypt": "mandatory",
-					"trustServerCertificate": false,
-					"authenticationType": "SQL",
-					"userName": "[parameters('LS_SQLDB_ASQL_Target_properties_typeProperties_userName')]",
-					"password": {
-						"type": "AzureKeyVaultSecret",
-						"store": {
-							"referenceName": "LS_KV_SalesProject_MK",
-							"type": "LinkedServiceReference"
-						},
-						"secretName": "sql-server-password"
-					}
-				}
-			},
-			"dependsOn": [
-				"[concat(variables('factoryId'), '/linkedServices/LS_KV_SalesProject_MK')]"
-			]
-		},
-		{
-			"name": "[concat(parameters('factoryName'), '/LS_SQLDB_SALES_Source')]",
-			"type": "Microsoft.DataFactory/factories/linkedServices",
-			"apiVersion": "2018-06-01",
-			"properties": {
-				"annotations": [],
-				"type": "AzureSqlDatabase",
-				"typeProperties": {
-					"server": "[parameters('LS_SQLDB_SALES_Source_properties_typeProperties_server')]",
-					"database": "[parameters('LS_SQLDB_SALES_Source_properties_typeProperties_database')]",
-					"encrypt": "mandatory",
-					"trustServerCertificate": false,
-					"authenticationType": "SQL",
-					"userName": "[parameters('LS_SQLDB_SALES_Source_properties_typeProperties_userName')]",
-					"password": {
-						"type": "AzureKeyVaultSecret",
-						"store": {
-							"referenceName": "LS_KV_SalesProject_MK",
-							"type": "LinkedServiceReference"
-						},
-						"secretName": "sql-server-password"
-					}
-				}
-			},
-			"dependsOn": [
-				"[concat(variables('factoryId'), '/linkedServices/LS_KV_SalesProject_MK')]"
-			]
-		},
-		{
 			"name": "[concat(parameters('factoryName'), '/DS_ADLS_RAW_CSV')]",
 			"type": "Microsoft.DataFactory/factories/datasets",
 			"apiVersion": "2018-06-01",
@@ -266,31 +210,59 @@
 			]
 		},
 		{
-			"name": "[concat(parameters('factoryName'), '/DS_SQLDB_SALES_Source')]",
-			"type": "Microsoft.DataFactory/factories/datasets",
+			"name": "[concat(parameters('factoryName'), '/LS_SQLDB_ASQL_Target')]",
+			"type": "Microsoft.DataFactory/factories/linkedServices",
 			"apiVersion": "2018-06-01",
 			"properties": {
-				"linkedServiceName": {
-					"referenceName": "LS_SQLDB_SALES_Source",
-					"type": "LinkedServiceReference"
-				},
-				"parameters": {
-					"TableName": {
-						"type": "string"
-					}
-				},
 				"annotations": [],
-				"type": "AzureSqlTable",
-				"schema": [],
+				"type": "AzureSqlDatabase",
 				"typeProperties": {
-					"table": {
-						"value": "@dataset().TableName",
-						"type": "Expression"
+					"server": "[parameters('LS_SQLDB_ASQL_Target_properties_typeProperties_server')]",
+					"database": "[parameters('LS_SQLDB_ASQL_Target_properties_typeProperties_database')]",
+					"encrypt": "mandatory",
+					"trustServerCertificate": false,
+					"authenticationType": "SQL",
+					"userName": "[parameters('LS_SQLDB_ASQL_Target_properties_typeProperties_userName')]",
+					"password": {
+						"type": "AzureKeyVaultSecret",
+						"store": {
+							"referenceName": "LS_KV_SalesProject_MK",
+							"type": "LinkedServiceReference"
+						},
+						"secretName": "sql-server-password"
 					}
 				}
 			},
 			"dependsOn": [
-				"[concat(variables('factoryId'), '/linkedServices/LS_SQLDB_SALES_Source')]"
+				"[concat(variables('factoryId'), '/linkedServices/LS_KV_SalesProject_MK')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/LS_SQLDB_SALES_Source')]",
+			"type": "Microsoft.DataFactory/factories/linkedServices",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"annotations": [],
+				"type": "AzureSqlDatabase",
+				"typeProperties": {
+					"server": "[parameters('LS_SQLDB_SALES_Source_properties_typeProperties_server')]",
+					"database": "[parameters('LS_SQLDB_SALES_Source_properties_typeProperties_database')]",
+					"encrypt": "mandatory",
+					"trustServerCertificate": false,
+					"authenticationType": "SQL",
+					"userName": "[parameters('LS_SQLDB_SALES_Source_properties_typeProperties_userName')]",
+					"password": {
+						"type": "AzureKeyVaultSecret",
+						"store": {
+							"referenceName": "LS_KV_SalesProject_MK",
+							"type": "LinkedServiceReference"
+						},
+						"secretName": "sql-server-password"
+					}
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/LS_KV_SalesProject_MK')]"
 			]
 		},
 		{
@@ -326,6 +298,34 @@
 			},
 			"dependsOn": [
 				"[concat(variables('factoryId'), '/linkedServices/LS_SQLDB_ASQL_Target')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/DS_SQLDB_SALES_Source')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "LS_SQLDB_SALES_Source",
+					"type": "LinkedServiceReference"
+				},
+				"parameters": {
+					"TableName": {
+						"type": "string"
+					}
+				},
+				"annotations": [],
+				"type": "AzureSqlTable",
+				"schema": [],
+				"typeProperties": {
+					"table": {
+						"value": "@dataset().TableName",
+						"type": "Expression"
+					}
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/LS_SQLDB_SALES_Source')]"
 			]
 		},
 		{
@@ -496,15 +496,24 @@
 										"storedProcedureName": "[[control].[usp_InsertTableLog]",
 										"storedProcedureParameters": {
 											"EndTime": {
-												"value": "@utcNow()",
+												"value": {
+													"value": "@utcNow()",
+													"type": "Expression"
+												},
 												"type": "DateTime"
 											},
 											"PipelineName": {
-												"value": "@pipeline().Pipeline",
+												"value": {
+													"value": "@pipeline().Pipeline",
+													"type": "Expression"
+												},
 												"type": "String"
 											},
 											"PipelineRunID": {
-												"value": "@pipeline().RunId",
+												"value": {
+													"value": "@pipeline().RunId",
+													"type": "Expression"
+												},
 												"type": "String"
 											},
 											"RejectCount": {
@@ -512,15 +521,24 @@
 												"type": "Int32"
 											},
 											"SourceCount": {
-												"value": "@activity('CPY_SQL_To_RAW').output.rowsRead",
+												"value": {
+													"value": "@activity('CPY_SQL_To_RAW').output.rowsRead",
+													"type": "Expression"
+												},
 												"type": "Int32"
 											},
 											"SourceName": {
-												"value": "@item().SourceTableName",
+												"value": {
+													"value": "@item().SourceTableName",
+													"type": "Expression"
+												},
 												"type": "String"
 											},
 											"StartTime": {
-												"value": "@activity('CPY_SQL_To_RAW').output.executionDetails[0].start",
+												"value": {
+													"value": "@activity('CPY_SQL_To_RAW').output.executionDetails[0].start",
+													"type": "Expression"
+												},
 												"type": "DateTime"
 											},
 											"Status": {
@@ -528,11 +546,17 @@
 												"type": "String"
 											},
 											"TargetCount": {
-												"value": "@activity('CPY_SQL_To_RAW').output.rowsCopied",
+												"value": {
+													"value": "@activity('CPY_SQL_To_RAW').output.rowsCopied",
+													"type": "Expression"
+												},
 												"type": "Int32"
 											},
 											"TargetName": {
-												"value": "@item().IngestionTable",
+												"value": {
+													"value": "@item().IngestionTable",
+													"type": "Expression"
+												},
 												"type": "String"
 											}
 										}
@@ -569,27 +593,45 @@
 												"type": "String"
 											},
 											"ErrorCode": {
-												"value": "@activity('CPY_SQL_To_RAW').error.errorCode",
+												"value": {
+													"value": "@activity('CPY_SQL_To_RAW').error.errorCode",
+													"type": "Expression"
+												},
 												"type": "String"
 											},
 											"ErrorMessage": {
-												"value": "@activity('CPY_SQL_To_RAW').error.message",
+												"value": {
+													"value": "@activity('CPY_SQL_To_RAW').error.message",
+													"type": "Expression"
+												},
 												"type": "String"
 											},
 											"PipelineName": {
-												"value": "@pipeline().Pipeline",
+												"value": {
+													"value": "@pipeline().Pipeline",
+													"type": "Expression"
+												},
 												"type": "String"
 											},
 											"PipelineRunID": {
-												"value": "@pipeline().RunId",
+												"value": {
+													"value": "@pipeline().RunId",
+													"type": "Expression"
+												},
 												"type": "String"
 											},
 											"SourceName": {
-												"value": "@item().SourceTableName",
+												"value": {
+													"value": "@item().SourceTableName",
+													"type": "Expression"
+												},
 												"type": "String"
 											},
 											"TargetName": {
-												"value": "@item().IngestionTable",
+												"value": {
+													"value": "@item().IngestionTable",
+													"type": "Expression"
+												},
 												"type": "String"
 											}
 										}
@@ -622,11 +664,17 @@
 										"storedProcedureName": "[[control].[usp_UpdateWatermark]",
 										"storedProcedureParameters": {
 											"TableName": {
-												"value": "@item().SourceTableName",
+												"value": {
+													"value": "@item().SourceTableName",
+													"type": "Expression"
+												},
 												"type": "String"
 											},
 											"WatermarkValue": {
-												"value": "@utcNow()",
+												"value": {
+													"value": "@utcNow()",
+													"type": "Expression"
+												},
 												"type": "DateTime"
 											}
 										}
@@ -674,6 +722,7 @@
 											}
 										},
 										"enableStaging": false,
+										"enableSkipIncompatibleRow": true,
 										"translator": {
 											"type": "TabularTranslator",
 											"typeConversion": true,
@@ -735,7 +784,7 @@
 												"Container": "@item().TargetContainer"
 											}
 										},
-										"enableLogging": true,
+										"enableLogging": false,
 										"storeSettings": {
 											"type": "AzureBlobFSReadSettings",
 											"recursive": true,
