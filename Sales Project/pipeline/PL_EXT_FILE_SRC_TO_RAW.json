@@ -5,7 +5,14 @@
 			{
 				"name": "LKP_Get_File_Config",
 				"type": "Lookup",
-				"dependsOn": [],
+				"dependsOn": [
+					{
+						"activity": "FE_Loop_Files",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
 				"policy": {
 					"timeout": "0.12:00:00",
 					"retry": 0,
@@ -30,6 +37,19 @@
 						}
 					},
 					"firstRowOnly": false
+				}
+			},
+			{
+				"name": "FE_Loop_Files",
+				"type": "ForEach",
+				"dependsOn": [],
+				"userProperties": [],
+				"typeProperties": {
+					"items": {
+						"value": "@activity('LKP_Get_File_Config').output.value",
+						"type": "Expression"
+					},
+					"batchCount": 4
 				}
 			}
 		],
