@@ -89,117 +89,9 @@
 					"batchCount": 4,
 					"activities": [
 						{
-							"name": "GM_Check_Target_Files",
-							"type": "GetMetadata",
-							"dependsOn": [],
-							"policy": {
-								"timeout": "0.12:00:00",
-								"retry": 0,
-								"retryIntervalInSeconds": 30,
-								"secureOutput": false,
-								"secureInput": false
-							},
-							"userProperties": [],
-							"typeProperties": {
-								"dataset": {
-									"referenceName": "DS_ADLS_RAW_CSV",
-									"type": "DatasetReference",
-									"parameters": {
-										"FolderPath": {
-											"value": "@item().TargetFolderPath",
-											"type": "Expression"
-										},
-										"Container": {
-											"value": "@item().TargetContainer",
-											"type": "Expression"
-										}
-									}
-								},
-								"fieldList": [
-									"childItems"
-								],
-								"storeSettings": {
-									"type": "AzureBlobFSReadSettings",
-									"recursive": true,
-									"enablePartitionDiscovery": false
-								},
-								"formatSettings": {
-									"type": "DelimitedTextReadSettings"
-								}
-							}
-						},
-						{
-							"name": "IF_Files_Exist",
-							"type": "IfCondition",
-							"dependsOn": [
-								{
-									"activity": "GM_Check_Target_Files",
-									"dependencyConditions": [
-										"Succeeded"
-									]
-								}
-							],
-							"userProperties": [],
-							"typeProperties": {
-								"expression": {
-									"value": "@greater(length(activity('GM_Check_Target_Files').output.childItems), 0)",
-									"type": "Expression"
-								},
-								"ifTrueActivities": [
-									{
-										"name": "DEL_Target_After_Archive",
-										"type": "Delete",
-										"dependsOn": [],
-										"policy": {
-											"timeout": "0.12:00:00",
-											"retry": 0,
-											"retryIntervalInSeconds": 30,
-											"secureOutput": false,
-											"secureInput": false
-										},
-										"userProperties": [],
-										"typeProperties": {
-											"dataset": {
-												"referenceName": "DS_ADLS_BINARY_DELETE",
-												"type": "DatasetReference",
-												"parameters": {
-													"FolderPath": {
-														"value": "@item().TargetFolderPath",
-														"type": "Expression"
-													},
-													"Container": {
-														"value": "@item().TargetContainer",
-														"type": "Expression"
-													}
-												}
-											},
-											"enableLogging": false,
-											"storeSettings": {
-												"type": "AzureBlobFSReadSettings",
-												"recursive": true,
-												"wildcardFolderPath": {
-													"value": "@item().TargetFolderPath",
-													"type": "Expression"
-												},
-												"wildcardFileName": "*.csv",
-												"enablePartitionDiscovery": false
-											}
-										}
-									}
-								]
-							}
-						},
-						{
 							"name": "CPY_SQL_To_RAW",
 							"type": "Copy",
-							"dependsOn": [
-								{
-									"activity": "IF_Files_Exist",
-									"dependencyConditions": [
-										"Succeeded"
-									]
-								}
-							],
+							"dependsOn": [],
 							"policy": {
 								"timeout": "0.12:00:00",
 								"retry": 0,
@@ -212,7 +104,7 @@
 								"source": {
 									"type": "AzureSqlSource",
 									"sqlReaderQuery": {
-										"value": "@if(\n  equals(item().LoadType, 'INCREMENTAL'),\n  concat('SELECT * FROM [', item().SourceSchema, '].[', item().SourceTableName, '] WHERE UPDATE_DT > ''1900-01-01'''),\n  concat('SELECT * FROM [', item().SourceSchema, '].[', item().SourceTableName, ']')\n)",
+										"value": "@if(equals(item().LoadType,'INCREMENTAL'),concat('SELECT * FROM [',item().SourceSchema,'].[',item().SourceTableName,'] WHERE UPDATE_DT > ''',activity('LKP_Get_Watermark').output.value[0].WatermarkValue,''''),concat('SELECT * FROM [',item().SourceSchema,'].[',item().SourceTableName,']'))",
 										"type": "Expression"
 									},
 									"queryTimeout": "02:00:00",
@@ -229,15 +121,7 @@
 										"fileExtension": ".csv"
 									}
 								},
-								"enableStaging": false,
-								"translator": {
-									"type": "TabularTranslator",
-									"typeConversion": true,
-									"typeConversionSettings": {
-										"allowDataTruncation": true,
-										"treatBooleanAsNumber": false
-									}
-								}
+								"enableStaging": false
 							},
 							"inputs": [
 								{
@@ -261,7 +145,7 @@
 											"type": "Expression"
 										},
 										"FileName": {
-											"value": "@concat(item().TargetFileName, '_', formatDateTime(utcNow(), 'yyyyMMddHHmmss'), '.csv')",
+											"value": "@concat(item().TargetFileName,'_',formatDateTime(utcNow(),'yyyyMMddHHmmss'),'.csv')",
 											"type": "Expression"
 										},
 										"Container": {
