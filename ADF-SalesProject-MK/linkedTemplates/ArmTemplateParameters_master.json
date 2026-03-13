@@ -1,0 +1,48 @@
+{
+	"$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+	"contentVersion": "1.0.0.0",
+	"parameters": {
+		"factoryName": {
+			"value": "ADF-SalesProject-MK"
+		},
+		"LS_ADB_SalesProject_MK_accessToken": {
+			"value": ""
+		},
+		"LS_ADLS_SalesProject_MK_accountKey": {
+			"value": ""
+		},
+		"LS_BLOB_SalesProject_MK_connectionString": {
+			"value": ""
+		},
+		"LS_ADLS_SalesProject_MK_properties_typeProperties_url": {
+			"value": "https://adlssalesprojectmk.dfs.core.windows.net/"
+		},
+		"LS_KV_SalesProject_MK_properties_typeProperties_baseUrl": {
+			"value": "https://KV-SalesProject-MK.vault.azure.net/"
+		},
+		"LS_SQLDB_ASQL_Target_properties_typeProperties_server": {
+			"value": "sqlserver-salesproject-mk.database.windows.net"
+		},
+		"LS_SQLDB_ASQL_Target_properties_typeProperties_database": {
+			"value": "ASQL-SalesProject-MK"
+		},
+		"LS_SQLDB_ASQL_Target_properties_typeProperties_userName": {
+			"value": "sqladminmk"
+		},
+		"LS_SQLDB_SALES_Source_properties_typeProperties_server": {
+			"value": "sqlserver-salesproject-mk.database.windows.net"
+		},
+		"LS_SQLDB_SALES_Source_properties_typeProperties_database": {
+			"value": "SALES"
+		},
+		"LS_SQLDB_SALES_Source_properties_typeProperties_userName": {
+			"value": "sqladminmk"
+		},
+		"containerUri": {
+			"value": ""
+		},
+		"containerSasToken": {
+			"value": ""
+		}
+	}
+}
