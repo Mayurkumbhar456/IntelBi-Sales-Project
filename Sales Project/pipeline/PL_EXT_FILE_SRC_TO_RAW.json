@@ -189,6 +189,63 @@
 								"referenceName": "LS_SQLDB_ASQL_Target",
 								"type": "LinkedServiceReference"
 							}
+						},
+						{
+							"name": "SP_Insert_ErrorLog",
+							"type": "SqlServerStoredProcedure",
+							"dependsOn": [
+								{
+									"activity": "CPY_FILE_To_RAW",
+									"dependencyConditions": [
+										"Failed"
+									]
+								}
+							],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"storedProcedureName": "[control].[usp_InsertErrorLog]",
+								"storedProcedureParameters": {
+									"ActivityName": {
+										"value": "CPY_FILE_To_RAW",
+										"type": "String"
+									},
+									"ErrorCode": {
+										"value": "@activity('CPY_FILE_To_RAW').error.errorCode",
+										"type": "String"
+									},
+									"ErrorMessage": {
+										"value": "@activity('CPY_FILE_To_RAW').error.message",
+										"type": "String"
+									},
+									"PipelineName": {
+										"value": "@pipeline().Pipeline",
+										"type": "String"
+									},
+									"PipelineRunID": {
+										"value": "@pipeline().RunId",
+										"type": "String"
+									},
+									"SourceName": {
+										"value": "@item().SourceTableName",
+										"type": "String"
+									},
+									"TargetName": {
+										"value": "@item().IngestionTable",
+										"type": "String"
+									}
+								}
+							},
+							"linkedServiceName": {
+								"referenceName": "LS_SQLDB_ASQL_Target",
+								"type": "LinkedServiceReference"
+							}
 						}
 					]
 				}
