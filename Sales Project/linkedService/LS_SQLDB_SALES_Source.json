@@ -1,0 +1,23 @@
+{
+	"name": "LS_SQLDB_SALES_Source",
+	"properties": {
+		"annotations": [],
+		"type": "AzureSqlDatabase",
+		"typeProperties": {
+			"server": "sqlserver-salesproject-mk.database.windows.net",
+			"database": "SALES",
+			"encrypt": "mandatory",
+			"trustServerCertificate": false,
+			"authenticationType": "SQL",
+			"userName": "sqladminmk",
+			"password": {
+				"type": "AzureKeyVaultSecret",
+				"store": {
+					"referenceName": "LS_KV_SalesProject_MK",
+					"type": "LinkedServiceReference"
+				},
+				"secretName": "sql-server-password"
+			}
+		}
+	}
+}
