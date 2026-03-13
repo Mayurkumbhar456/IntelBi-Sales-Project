@@ -252,6 +252,43 @@
 								"referenceName": "LS_SQLDB_ASQL_Target",
 								"type": "LinkedServiceReference"
 							}
+						},
+						{
+							"name": "SP_Update_Watermark",
+							"type": "SqlServerStoredProcedure",
+							"dependsOn": [
+								{
+									"activity": "SP_Log_TableLog",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"storedProcedureName": "[control].[usp_UpdateWatermark]",
+								"storedProcedureParameters": {
+									"TableName": {
+										"value": "@item().SourceTableName",
+										"type": "String"
+									},
+									"WatermarkValue": {
+										"value": "@utcNow()",
+										"type": "DateTime"
+									}
+								}
+							},
+							"linkedServiceName": {
+								"referenceName": "LS_SQLDB_ASQL_Target",
+								"type": "LinkedServiceReference"
+							}
 						}
 					]
 				}
