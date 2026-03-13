@@ -327,6 +327,353 @@
 			"dependsOn": [
 				"[concat(variables('factoryId'), '/linkedServices/LS_SQLDB_ASQL_Target')]"
 			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/PL_EXT_SQL_SRC_TO_RAW_FULL')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"activities": [
+					{
+						"name": "LKP_Get_SQL_Tables_Config",
+						"type": "Lookup",
+						"dependsOn": [
+							{
+								"activity": "LKP_Get_Watermark",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "AzureSqlSource",
+								"sqlReaderQuery": "SELECT * FROM control.PipelineConfig \nWHERE SourceType = 'SQL' AND IsActive = 1",
+								"queryTimeout": "02:00:00",
+								"partitionOption": "None"
+							},
+							"dataset": {
+								"referenceName": "DS_SQLDB_ASQL_Target",
+								"type": "DatasetReference",
+								"parameters": {
+									"SchemaName": "control",
+									"TableName": "PipelineConfig"
+								}
+							},
+							"firstRowOnly": false
+						}
+					},
+					{
+						"name": "FE_Loop_SQL_Tables",
+						"type": "ForEach",
+						"dependsOn": [
+							{
+								"activity": "LKP_Get_SQL_Tables_Config",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"userProperties": [],
+						"typeProperties": {
+							"items": {
+								"value": "@activity('LKP_Get_SQL_Tables_Config').output.value",
+								"type": "Expression"
+							},
+							"batchCount": 4,
+							"activities": [
+								{
+									"name": "CPY_SQL_To_RAW",
+									"type": "Copy",
+									"dependsOn": [],
+									"policy": {
+										"timeout": "0.12:00:00",
+										"retry": 0,
+										"retryIntervalInSeconds": 30,
+										"secureOutput": false,
+										"secureInput": false
+									},
+									"userProperties": [],
+									"typeProperties": {
+										"source": {
+											"type": "AzureSqlSource",
+											"sqlReaderQuery": {
+												"value": "@if(\n  equals(item().LoadType, 'INCREMENTAL'),\n  concat('SELECT * FROM ', item().SourceSchema, '.', item().SourceTableName, \n         ' WHERE UPDATE_DT > ''', \n         activity('LKP_Get_SQL_Tables_Config').output.value[0].WatermarkValue, \n         ''''),\n  concat('SELECT * FROM ', item().SourceSchema, '.', item().SourceTableName)\n)",
+												"type": "Expression"
+											},
+											"queryTimeout": "02:00:00",
+											"partitionOption": "None"
+										},
+										"sink": {
+											"type": "DelimitedTextSink",
+											"storeSettings": {
+												"type": "AzureBlobFSWriteSettings"
+											},
+											"formatSettings": {
+												"type": "DelimitedTextWriteSettings",
+												"quoteAllText": true,
+												"fileExtension": ".txt"
+											}
+										},
+										"enableStaging": false,
+										"translator": {
+											"type": "TabularTranslator",
+											"typeConversion": true,
+											"typeConversionSettings": {
+												"allowDataTruncation": true,
+												"treatBooleanAsNumber": false
+											}
+										}
+									},
+									"inputs": [
+										{
+											"referenceName": "DS_SQLDB_SALES_Source",
+											"type": "DatasetReference",
+											"parameters": {
+												"TableName": {
+													"value": "@item().sourceTableName",
+													"type": "Expression"
+												}
+											}
+										}
+									],
+									"outputs": [
+										{
+											"referenceName": "DS_ADLS_RAW_CSV",
+											"type": "DatasetReference",
+											"parameters": {
+												"FolderPath": {
+													"value": "@item().TargetFolderPath",
+													"type": "Expression"
+												},
+												"FileName": {
+													"value": "@concat(item().TargetFileName, '_', formatDateTime(utcNow(), 'yyyyMMddHHmmss'), '.csv')",
+													"type": "Expression"
+												},
+												"Container": {
+													"value": "@item().TargetContainer",
+													"type": "Expression"
+												}
+											}
+										}
+									]
+								},
+								{
+									"name": "SP_Log_TableLog",
+									"type": "SqlServerStoredProcedure",
+									"dependsOn": [
+										{
+											"activity": "CPY_SQL_To_RAW",
+											"dependencyConditions": [
+												"Succeeded"
+											]
+										}
+									],
+									"policy": {
+										"timeout": "0.12:00:00",
+										"retry": 0,
+										"retryIntervalInSeconds": 30,
+										"secureOutput": false,
+										"secureInput": false
+									},
+									"userProperties": [],
+									"typeProperties": {
+										"storedProcedureName": "[[control].[usp_InsertTableLog]",
+										"storedProcedureParameters": {
+											"EndTime": {
+												"value": "@utcNow()",
+												"type": "DateTime"
+											},
+											"PipelineName": {
+												"value": "@pipeline().Pipeline",
+												"type": "String"
+											},
+											"PipelineRunID": {
+												"value": "@pipeline().RunId",
+												"type": "String"
+											},
+											"RejectCount": {
+												"value": "0",
+												"type": "Int32"
+											},
+											"SourceCount": {
+												"value": "@activity('CPY_SQL_To_RAW').output.rowsRead",
+												"type": "Int32"
+											},
+											"SourceName": {
+												"value": "@item().SourceTableName",
+												"type": "String"
+											},
+											"StartTime": {
+												"value": "@activity('CPY_SQL_To_RAW').output.executionDetails[0].start",
+												"type": "DateTime"
+											},
+											"Status": {
+												"value": "Success",
+												"type": "String"
+											},
+											"TargetCount": {
+												"value": "@activity('CPY_SQL_To_RAW').output.rowsCopied",
+												"type": "Int32"
+											},
+											"TargetName": {
+												"value": "@item().IngestionTable",
+												"type": "String"
+											}
+										}
+									},
+									"linkedServiceName": {
+										"referenceName": "LS_SQLDB_ASQL_Target",
+										"type": "LinkedServiceReference"
+									}
+								},
+								{
+									"name": "SP_Insert_ErrorLog",
+									"type": "SqlServerStoredProcedure",
+									"dependsOn": [
+										{
+											"activity": "CPY_SQL_To_RAW",
+											"dependencyConditions": [
+												"Failed"
+											]
+										}
+									],
+									"policy": {
+										"timeout": "0.12:00:00",
+										"retry": 0,
+										"retryIntervalInSeconds": 30,
+										"secureOutput": false,
+										"secureInput": false
+									},
+									"userProperties": [],
+									"typeProperties": {
+										"storedProcedureName": "[[control].[usp_InsertErrorLog]",
+										"storedProcedureParameters": {
+											"ActivityName": {
+												"value": "CPY_SQL_To_RAW",
+												"type": "String"
+											},
+											"ErrorCode": {
+												"value": "@activity('CPY_SQL_To_RAW').error.errorCode",
+												"type": "String"
+											},
+											"ErrorMessage": {
+												"value": "@activity('CPY_SQL_To_RAW').error.message",
+												"type": "String"
+											},
+											"PipelineName": {
+												"value": "@pipeline().Pipeline",
+												"type": "String"
+											},
+											"PipelineRunID": {
+												"value": "@pipeline().RunId",
+												"type": "String"
+											},
+											"SourceName": {
+												"value": "@item().SourceTableName",
+												"type": "String"
+											},
+											"TargetName": {
+												"value": "@item().IngestionTable",
+												"type": "String"
+											}
+										}
+									},
+									"linkedServiceName": {
+										"referenceName": "LS_SQLDB_ASQL_Target",
+										"type": "LinkedServiceReference"
+									}
+								},
+								{
+									"name": "SP_Update_Watermark",
+									"type": "SqlServerStoredProcedure",
+									"dependsOn": [
+										{
+											"activity": "SP_Log_TableLog",
+											"dependencyConditions": [
+												"Succeeded"
+											]
+										}
+									],
+									"policy": {
+										"timeout": "0.12:00:00",
+										"retry": 0,
+										"retryIntervalInSeconds": 30,
+										"secureOutput": false,
+										"secureInput": false
+									},
+									"userProperties": [],
+									"typeProperties": {
+										"storedProcedureName": "[[control].[usp_UpdateWatermark]",
+										"storedProcedureParameters": {
+											"TableName": {
+												"value": "@item().SourceTableName",
+												"type": "String"
+											},
+											"WatermarkValue": {
+												"value": "@utcNow()",
+												"type": "DateTime"
+											}
+										}
+									},
+									"linkedServiceName": {
+										"referenceName": "LS_SQLDB_ASQL_Target",
+										"type": "LinkedServiceReference"
+									}
+								}
+							]
+						}
+					},
+					{
+						"name": "LKP_Get_Watermark",
+						"type": "Lookup",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "AzureSqlSource",
+								"sqlReaderQuery": "SELECT * FROM control.Watermark",
+								"queryTimeout": "02:00:00",
+								"partitionOption": "None"
+							},
+							"dataset": {
+								"referenceName": "DS_SQLDB_ASQL_Target",
+								"type": "DatasetReference",
+								"parameters": {
+									"SchemaName": "control",
+									"TableName": "Watermark"
+								}
+							},
+							"firstRowOnly": false
+						}
+					}
+				],
+				"policy": {
+					"elapsedTimeMetric": {}
+				},
+				"annotations": []
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/datasets/DS_SQLDB_ASQL_Target')]",
+				"[concat(variables('factoryId'), '/datasets/DS_SQLDB_SALES_Source')]",
+				"[concat(variables('factoryId'), '/datasets/DS_ADLS_RAW_CSV')]",
+				"[concat(variables('factoryId'), '/linkedServices/LS_SQLDB_ASQL_Target')]"
+			]
 		}
 	]
 }
