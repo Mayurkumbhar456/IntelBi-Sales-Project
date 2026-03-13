@@ -1,0 +1,23 @@
+{
+	"name": "DS_SQLDB_SALES_Source",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "LS_SQLDB_SALES_Source",
+			"type": "LinkedServiceReference"
+		},
+		"parameters": {
+			"TableName": {
+				"type": "string"
+			}
+		},
+		"annotations": [],
+		"type": "AzureSqlTable",
+		"schema": [],
+		"typeProperties": {
+			"table": {
+				"value": "@dataset().TableName",
+				"type": "Expression"
+			}
+		}
+	}
+}
