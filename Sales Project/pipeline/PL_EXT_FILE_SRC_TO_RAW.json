@@ -177,12 +177,15 @@
 										"type": "String"
 									},
 									"RejectCount": {
-										"value": "0",
+										"value": {
+											"value": "0",
+											"type": "Expression"
+										},
 										"type": "Int32"
 									},
 									"SourceCount": {
 										"value": {
-											"value": "@activity('CPY_FILE_To_RAW').output.rowsRead",
+											"value": "@activity('CPY_FILE_To_RAW').output.filesRead",
 											"type": "Expression"
 										},
 										"type": "Int32"
@@ -202,12 +205,15 @@
 										"type": "DateTime"
 									},
 									"Status": {
-										"value": "Success",
+										"value": {
+											"value": "Success",
+											"type": "Expression"
+										},
 										"type": "String"
 									},
 									"TargetCount": {
 										"value": {
-											"value": "@activity('CPY_FILE_To_RAW').output.rowsCopied",
+											"value": "@activity('CPY_FILE_To_RAW').output.filesWritten",
 											"type": "Expression"
 										},
 										"type": "Int32"
