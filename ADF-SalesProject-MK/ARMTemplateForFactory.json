@@ -1551,6 +1551,89 @@
 				"[concat(variables('factoryId'), '/linkedServices/LS_ADB_SalesProject_MK')]",
 				"[concat(variables('factoryId'), '/linkedServices/LS_SQLDB_ASQL_Target')]"
 			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/PL_MASTER_SQL_SRC')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"activities": [
+					{
+						"name": "EXT_SQL_To_RAW",
+						"type": "ExecutePipeline",
+						"dependsOn": [],
+						"policy": {
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"pipeline": {
+								"referenceName": "PL_EXT_SQL_SRC_TO_RAW_FULL",
+								"type": "PipelineReference"
+							},
+							"waitOnCompletion": true,
+							"parameters": {}
+						}
+					},
+					{
+						"name": "INT_RAW_To_Ingestion",
+						"type": "ExecutePipeline",
+						"dependsOn": [
+							{
+								"activity": "EXT_SQL_To_RAW",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"pipeline": {
+								"referenceName": "PL_INT_RAW_TO_INGESTION",
+								"type": "PipelineReference"
+							},
+							"waitOnCompletion": true,
+							"parameters": {}
+						}
+					},
+					{
+						"name": "INT_Ingestion_To_Integration",
+						"type": "ExecutePipeline",
+						"dependsOn": [
+							{
+								"activity": "INT_RAW_To_Ingestion",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"pipeline": {
+								"referenceName": "PL_INT_INGESTION_TO_INTEGRATION",
+								"type": "PipelineReference"
+							},
+							"waitOnCompletion": true,
+							"parameters": {}
+						}
+					}
+				],
+				"policy": {
+					"elapsedTimeMetric": {}
+				},
+				"annotations": []
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/pipelines/PL_EXT_SQL_SRC_TO_RAW_FULL')]",
+				"[concat(variables('factoryId'), '/pipelines/PL_INT_RAW_TO_INGESTION')]",
+				"[concat(variables('factoryId'), '/pipelines/PL_INT_INGESTION_TO_INTEGRATION')]"
+			]
 		}
 	]
 }
