@@ -1,0 +1,178 @@
+{
+	"name": "PL_INT_INGESTION_TO_INTEGRATION",
+	"properties": {
+		"activities": [
+			{
+				"name": "DBR_Ingestion_To_Integration",
+				"type": "DatabricksNotebook",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"notebookPath": "/Users/mayurkumbhar5100@gmail.com/IntelBi-Sales-Project/Sales Project/NB_INGESTION_TO_INTEGRATION"
+				},
+				"linkedServiceName": {
+					"referenceName": "LS_ADB_SalesProject_MK",
+					"type": "LinkedServiceReference"
+				}
+			},
+			{
+				"name": "SP_Log_Ingestion_Integration",
+				"type": "SqlServerStoredProcedure",
+				"dependsOn": [
+					{
+						"activity": "DBR_Ingestion_To_Integration",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"storedProcedureName": "[control].[usp_InsertTableLog]",
+					"storedProcedureParameters": {
+						"PipelineName": {
+							"value": {
+								"value": "@pipeline().Pipeline",
+								"type": "Expression"
+							},
+							"type": "String"
+						},
+						"PipelineRunID": {
+							"value": {
+								"value": "@pipeline().RunId",
+								"type": "Expression"
+							},
+							"type": "String"
+						},
+						"SourceName": {
+							"value": "Ingestion",
+							"type": "String"
+						},
+						"TargetName": {
+							"value": "Integration",
+							"type": "String"
+						},
+						"SourceCount": {
+							"value": "0",
+							"type": "Int32"
+						},
+						"TargetCount": {
+							"value": "0",
+							"type": "Int32"
+						},
+						"RejectCount": {
+							"value": "0",
+							"type": "Int32"
+						},
+						"Status": {
+							"value": "Success",
+							"type": "String"
+						},
+						"StartTime": {
+							"value": {
+								"value": "@pipeline().TriggerTime",
+								"type": "Expression"
+							},
+							"type": "DateTime"
+						},
+						"EndTime": {
+							"value": {
+								"value": "@utcNow()",
+								"type": "Expression"
+							},
+							"type": "DateTime"
+						}
+					}
+				},
+				"linkedServiceName": {
+					"referenceName": "LS_SQLDB_ASQL_Target",
+					"type": "LinkedServiceReference"
+				}
+			},
+			{
+				"name": "SP_Error_Ingestion_Integration",
+				"type": "SqlServerStoredProcedure",
+				"dependsOn": [
+					{
+						"activity": "DBR_Ingestion_To_Integration",
+						"dependencyConditions": [
+							"Failed"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"storedProcedureName": "[control].[usp_InsertErrorLog]",
+					"storedProcedureParameters": {
+						"PipelineName": {
+							"value": {
+								"value": "@pipeline().Pipeline",
+								"type": "Expression"
+							},
+							"type": "String"
+						},
+						"PipelineRunID": {
+							"value": {
+								"value": "@pipeline().RunId",
+								"type": "Expression"
+							},
+							"type": "String"
+						},
+						"ActivityName": {
+							"value": "DBR_Ingestion_To_Integration",
+							"type": "String"
+						},
+						"ErrorMessage": {
+							"value": {
+								"value": "@activity('DBR_Ingestion_To_Integration').error.message",
+								"type": "Expression"
+							},
+							"type": "String"
+						},
+						"ErrorCode": {
+							"value": {
+								"value": "@activity('DBR_Ingestion_To_Integration').error.errorCode",
+								"type": "Expression"
+							},
+							"type": "String"
+						},
+						"SourceName": {
+							"value": "Ingestion",
+							"type": "String"
+						},
+						"TargetName": {
+							"value": "Integration",
+							"type": "String"
+						}
+					}
+				},
+				"linkedServiceName": {
+					"referenceName": "LS_SQLDB_ASQL_Target",
+					"type": "LinkedServiceReference"
+				}
+			}
+		],
+		"annotations": []
+	}
+}
