@@ -1,0 +1,152 @@
+{
+	"name": "PL_MASTER_FILE_SRC",
+	"properties": {
+		"activities": [
+			{
+				"name": "WAIT_10_MIN_FOR_FILE",
+				"type": "Wait",
+				"dependsOn": [],
+				"userProperties": [],
+				"typeProperties": {
+					"waitTimeInSeconds": 600
+				}
+			},
+			{
+				"name": "CHECK_FILE_EXISTS",
+				"type": "GetMetadata",
+				"dependsOn": [
+					{
+						"activity": "WAIT_10_MIN_FOR_FILE",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"dataset": {
+						"referenceName": "DS_BLOB_CSV",
+						"type": "DatasetReference",
+						"parameters": {
+							"FileName": "ORDER_METHOD.csv"
+						}
+					},
+					"fieldList": [
+						"exists"
+					],
+					"storeSettings": {
+						"type": "AzureBlobStorageReadSettings",
+						"recursive": true,
+						"enablePartitionDiscovery": false
+					},
+					"formatSettings": {
+						"type": "DelimitedTextReadSettings"
+					}
+				}
+			},
+			{
+				"name": "IF_FILE_EXISTS",
+				"type": "IfCondition",
+				"dependsOn": [
+					{
+						"activity": "CHECK_FILE_EXISTS",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"expression": {
+						"value": "@activity('CHECK_FILE_EXISTS').output.exists",
+						"type": "Expression"
+					},
+					"ifFalseActivities": [
+						{
+							"name": "FAIL_FILE_NOT_FOUND",
+							"type": "Fail",
+							"dependsOn": [],
+							"userProperties": [],
+							"typeProperties": {
+								"message": "Flat file not received after 10 minutes wait. Pipeline failed.",
+								"errorCode": "FILE_NOT_FOUND"
+							}
+						}
+					],
+					"ifTrueActivities": [
+						{
+							"name": "EXT_FILE_To_RAW",
+							"type": "ExecutePipeline",
+							"dependsOn": [],
+							"policy": {
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"pipeline": {
+									"referenceName": "PL_EXT_FILE_SRC_TO_RAW",
+									"type": "PipelineReference"
+								},
+								"waitOnCompletion": true
+							}
+						},
+						{
+							"name": "INT_FILE_RAW_To_Ingestion",
+							"type": "ExecutePipeline",
+							"dependsOn": [
+								{
+									"activity": "EXT_FILE_To_RAW",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"pipeline": {
+									"referenceName": "PL_INT_RAW_TO_INGESTION",
+									"type": "PipelineReference"
+								},
+								"waitOnCompletion": true
+							}
+						},
+						{
+							"name": "INT_FILE_Ingestion_To_Integration",
+							"type": "ExecutePipeline",
+							"dependsOn": [
+								{
+									"activity": "INT_FILE_RAW_To_Ingestion",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"pipeline": {
+									"referenceName": "PL_INT_INGESTION_TO_INTEGRATION",
+									"type": "PipelineReference"
+								},
+								"waitOnCompletion": true
+							}
+						}
+					]
+				}
+			}
+		],
+		"annotations": []
+	}
+}
