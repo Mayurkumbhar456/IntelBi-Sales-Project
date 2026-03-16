@@ -647,6 +647,7 @@
 				"annotations": []
 			},
 			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/LS_ADB_SalesProject_MK')]",
 				"[concat(variables('factoryId'), '/linkedServices/LS_SQLDB_ASQL_Target')]"
 			]
 		},

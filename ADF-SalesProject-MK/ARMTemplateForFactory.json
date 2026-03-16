@@ -1161,6 +1161,24 @@
 			]
 		},
 		{
+			"name": "[concat(parameters('factoryName'), '/LS_ADB_SalesProject_MK')]",
+			"type": "Microsoft.DataFactory/factories/linkedServices",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"annotations": [],
+				"type": "AzureDatabricks",
+				"typeProperties": {
+					"domain": "https://adb-7405614158687236.16.azuredatabricks.net",
+					"accessToken": {
+						"type": "SecureString",
+						"value": "[parameters('LS_ADB_SalesProject_MK_accessToken')]"
+					},
+					"existingClusterId": "[parameters('LS_ADB_SalesProject_MK_properties_typeProperties_existingClusterId')]"
+				}
+			},
+			"dependsOn": []
+		},
+		{
 			"name": "[concat(parameters('factoryName'), '/PL_INT_RAW_TO_INGESTION')]",
 			"type": "Microsoft.DataFactory/factories/pipelines",
 			"apiVersion": "2018-06-01",
@@ -1343,26 +1361,9 @@
 				"annotations": []
 			},
 			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/LS_ADB_SalesProject_MK')]",
 				"[concat(variables('factoryId'), '/linkedServices/LS_SQLDB_ASQL_Target')]"
 			]
-		},
-		{
-			"name": "[concat(parameters('factoryName'), '/LS_ADB_SalesProject_MK')]",
-			"type": "Microsoft.DataFactory/factories/linkedServices",
-			"apiVersion": "2018-06-01",
-			"properties": {
-				"annotations": [],
-				"type": "AzureDatabricks",
-				"typeProperties": {
-					"domain": "https://adb-7405614158687236.16.azuredatabricks.net",
-					"accessToken": {
-						"type": "SecureString",
-						"value": "[parameters('LS_ADB_SalesProject_MK_accessToken')]"
-					},
-					"existingClusterId": "[parameters('LS_ADB_SalesProject_MK_properties_typeProperties_existingClusterId')]"
-				}
-			},
-			"dependsOn": []
 		}
 	]
 }
