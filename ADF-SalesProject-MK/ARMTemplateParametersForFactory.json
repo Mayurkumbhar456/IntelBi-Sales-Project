@@ -5,14 +5,17 @@
 		"factoryName": {
 			"value": "ADF-SalesProject-MK"
 		},
+		"LS_ADB_SalesProject_MK_accessToken": {
+			"value": ""
+		},
 		"LS_ADLS_SalesProject_MK_accountKey": {
 			"value": ""
 		},
 		"LS_BLOB_SalesProject_MK_connectionString": {
 			"value": ""
 		},
-		"LS_ADB_SalesProject_MK_accessToken": {
-			"value": ""
+		"LS_ADB_SalesProject_MK_properties_typeProperties_existingClusterId": {
+			"value": "0313-105149-p766yye3"
 		},
 		"LS_ADLS_SalesProject_MK_properties_typeProperties_url": {
 			"value": "https://adlssalesprojectmk.dfs.core.windows.net/"
@@ -37,9 +40,6 @@
 		},
 		"LS_SQLDB_SALES_Source_properties_typeProperties_userName": {
 			"value": "sqladminmk"
-		},
-		"LS_ADB_SalesProject_MK_properties_typeProperties_existingClusterId": {
-			"value": "0313-105149-p766yye3"
 		}
 	}
 }

@@ -7,6 +7,10 @@
 			"metadata": "Data Factory name",
 			"defaultValue": "ADF-SalesProject-MK"
 		},
+		"LS_ADB_SalesProject_MK_accessToken": {
+			"type": "secureString",
+			"metadata": "Secure string for 'accessToken' of 'LS_ADB_SalesProject_MK'"
+		},
 		"LS_ADLS_SalesProject_MK_accountKey": {
 			"type": "secureString",
 			"metadata": "Secure string for 'accountKey' of 'LS_ADLS_SalesProject_MK'"
@@ -15,9 +19,9 @@
 			"type": "secureString",
 			"metadata": "Secure string for 'connectionString' of 'LS_BLOB_SalesProject_MK'"
 		},
-		"LS_ADB_SalesProject_MK_accessToken": {
-			"type": "secureString",
-			"metadata": "Secure string for 'accessToken' of 'LS_ADB_SalesProject_MK'"
+		"LS_ADB_SalesProject_MK_properties_typeProperties_existingClusterId": {
+			"type": "string",
+			"defaultValue": "0313-105149-p766yye3"
 		},
 		"LS_ADLS_SalesProject_MK_properties_typeProperties_url": {
 			"type": "string",
@@ -50,10 +54,6 @@
 		"LS_SQLDB_SALES_Source_properties_typeProperties_userName": {
 			"type": "string",
 			"defaultValue": "sqladminmk"
-		},
-		"LS_ADB_SalesProject_MK_properties_typeProperties_existingClusterId": {
-			"type": "string",
-			"defaultValue": "0313-105149-p766yye3"
 		}
 	},
 	"variables": {
@@ -775,6 +775,630 @@
 			]
 		},
 		{
+			"name": "[concat(parameters('factoryName'), '/PL_INT_INGESTION_TO_INTEGRATION')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"activities": [
+					{
+						"name": "DBR_Ingestion_To_Integration",
+						"type": "DatabricksNotebook",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"notebookPath": "/Users/mayurkumbhar5100@gmail.com/IntelBi-Sales-Project/Sales Project/NB_INGESTION_TO_INTEGRATION"
+						},
+						"linkedServiceName": {
+							"referenceName": "LS_ADB_SalesProject_MK",
+							"type": "LinkedServiceReference"
+						}
+					},
+					{
+						"name": "SP_Log_Ingestion_Integration",
+						"type": "SqlServerStoredProcedure",
+						"dependsOn": [
+							{
+								"activity": "DBR_Ingestion_To_Integration",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"storedProcedureName": "[[control].[usp_InsertTableLog]",
+							"storedProcedureParameters": {
+								"PipelineName": {
+									"value": {
+										"value": "@pipeline().Pipeline",
+										"type": "Expression"
+									},
+									"type": "String"
+								},
+								"PipelineRunID": {
+									"value": {
+										"value": "@pipeline().RunId",
+										"type": "Expression"
+									},
+									"type": "String"
+								},
+								"SourceName": {
+									"value": "Ingestion",
+									"type": "String"
+								},
+								"TargetName": {
+									"value": "Integration",
+									"type": "String"
+								},
+								"SourceCount": {
+									"value": "0",
+									"type": "Int32"
+								},
+								"TargetCount": {
+									"value": "0",
+									"type": "Int32"
+								},
+								"RejectCount": {
+									"value": "0",
+									"type": "Int32"
+								},
+								"Status": {
+									"value": "Success",
+									"type": "String"
+								},
+								"StartTime": {
+									"value": {
+										"value": "@pipeline().TriggerTime",
+										"type": "Expression"
+									},
+									"type": "DateTime"
+								},
+								"EndTime": {
+									"value": {
+										"value": "@utcNow()",
+										"type": "Expression"
+									},
+									"type": "DateTime"
+								}
+							}
+						},
+						"linkedServiceName": {
+							"referenceName": "LS_SQLDB_ASQL_Target",
+							"type": "LinkedServiceReference"
+						}
+					},
+					{
+						"name": "SP_Error_Ingestion_Integration",
+						"type": "SqlServerStoredProcedure",
+						"dependsOn": [
+							{
+								"activity": "DBR_Ingestion_To_Integration",
+								"dependencyConditions": [
+									"Failed"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"storedProcedureName": "[[control].[usp_InsertErrorLog]",
+							"storedProcedureParameters": {
+								"PipelineName": {
+									"value": {
+										"value": "@pipeline().Pipeline",
+										"type": "Expression"
+									},
+									"type": "String"
+								},
+								"PipelineRunID": {
+									"value": {
+										"value": "@pipeline().RunId",
+										"type": "Expression"
+									},
+									"type": "String"
+								},
+								"ActivityName": {
+									"value": "DBR_Ingestion_To_Integration",
+									"type": "String"
+								},
+								"ErrorMessage": {
+									"value": {
+										"value": "@activity('DBR_Ingestion_To_Integration').error.message",
+										"type": "Expression"
+									},
+									"type": "String"
+								},
+								"ErrorCode": {
+									"value": {
+										"value": "@activity('DBR_Ingestion_To_Integration').error.errorCode",
+										"type": "Expression"
+									},
+									"type": "String"
+								},
+								"SourceName": {
+									"value": "Ingestion",
+									"type": "String"
+								},
+								"TargetName": {
+									"value": "Integration",
+									"type": "String"
+								}
+							}
+						},
+						"linkedServiceName": {
+							"referenceName": "LS_SQLDB_ASQL_Target",
+							"type": "LinkedServiceReference"
+						}
+					}
+				],
+				"policy": {
+					"elapsedTimeMetric": {}
+				},
+				"annotations": []
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/LS_ADB_SalesProject_MK')]",
+				"[concat(variables('factoryId'), '/linkedServices/LS_SQLDB_ASQL_Target')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/PL_INT_RAW_TO_INGESTION')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"activities": [
+					{
+						"name": "DBR_RAW_To_Ingestion",
+						"type": "DatabricksNotebook",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"notebookPath": "/Users/mayurkumbhar5100@gmail.com/IntelBi-Sales-Project/Sales Project/NB_RAW_TO_INGESTION"
+						},
+						"linkedServiceName": {
+							"referenceName": "LS_ADB_SalesProject_MK",
+							"type": "LinkedServiceReference"
+						}
+					},
+					{
+						"name": "SP_Log_RAW_Ingestion",
+						"type": "SqlServerStoredProcedure",
+						"dependsOn": [
+							{
+								"activity": "DBR_RAW_To_Ingestion",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"storedProcedureName": "[[control].[usp_InsertTableLog]",
+							"storedProcedureParameters": {
+								"PipelineName": {
+									"value": {
+										"value": "@pipeline().Pipeline",
+										"type": "Expression"
+									},
+									"type": "String"
+								},
+								"PipelineRunID": {
+									"value": {
+										"value": "@pipeline().RunId",
+										"type": "Expression"
+									},
+									"type": "String"
+								},
+								"SourceName": {
+									"value": "RAW",
+									"type": "String"
+								},
+								"TargetName": {
+									"value": "Ingestion",
+									"type": "String"
+								},
+								"SourceCount": {
+									"value": "0",
+									"type": "Int32"
+								},
+								"TargetCount": {
+									"value": "0",
+									"type": "Int32"
+								},
+								"RejectCount": {
+									"value": "0",
+									"type": "Int32"
+								},
+								"Status": {
+									"value": "Success",
+									"type": "String"
+								},
+								"StartTime": {
+									"value": {
+										"value": "@pipeline().TriggerTime",
+										"type": "Expression"
+									},
+									"type": "DateTime"
+								},
+								"EndTime": {
+									"value": {
+										"value": "@utcNow()",
+										"type": "Expression"
+									},
+									"type": "DateTime"
+								}
+							}
+						},
+						"linkedServiceName": {
+							"referenceName": "LS_SQLDB_ASQL_Target",
+							"type": "LinkedServiceReference"
+						}
+					},
+					{
+						"name": "SP_Error_RAW_Ingestion",
+						"type": "SqlServerStoredProcedure",
+						"dependsOn": [
+							{
+								"activity": "DBR_RAW_To_Ingestion",
+								"dependencyConditions": [
+									"Failed"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"storedProcedureName": "[[control].[usp_InsertErrorLog]",
+							"storedProcedureParameters": {
+								"PipelineName": {
+									"value": {
+										"value": "@pipeline().Pipeline",
+										"type": "Expression"
+									},
+									"type": "String"
+								},
+								"PipelineRunID": {
+									"value": {
+										"value": "@pipeline().RunId",
+										"type": "Expression"
+									},
+									"type": "String"
+								},
+								"ActivityName": {
+									"value": "DBR_RAW_To_Ingestion",
+									"type": "String"
+								},
+								"ErrorMessage": {
+									"value": {
+										"value": "@activity('DBR_RAW_To_Ingestion').error.message",
+										"type": "Expression"
+									},
+									"type": "String"
+								},
+								"ErrorCode": {
+									"value": {
+										"value": "@activity('DBR_RAW_To_Ingestion').error.errorCode",
+										"type": "Expression"
+									},
+									"type": "String"
+								},
+								"SourceName": {
+									"value": "RAW",
+									"type": "String"
+								},
+								"TargetName": {
+									"value": "Ingestion",
+									"type": "String"
+								}
+							}
+						},
+						"linkedServiceName": {
+							"referenceName": "LS_SQLDB_ASQL_Target",
+							"type": "LinkedServiceReference"
+						}
+					}
+				],
+				"policy": {
+					"elapsedTimeMetric": {}
+				},
+				"annotations": []
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/LS_ADB_SalesProject_MK')]",
+				"[concat(variables('factoryId'), '/linkedServices/LS_SQLDB_ASQL_Target')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/PL_MASTER_FILE_SRC')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"activities": [
+					{
+						"name": "WAIT_10_MIN_FOR_FILE",
+						"type": "Wait",
+						"dependsOn": [],
+						"userProperties": [],
+						"typeProperties": {
+							"waitTimeInSeconds": 600
+						}
+					},
+					{
+						"name": "CHECK_FILE_EXISTS",
+						"type": "GetMetadata",
+						"dependsOn": [
+							{
+								"activity": "WAIT_10_MIN_FOR_FILE",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"dataset": {
+								"referenceName": "DS_BLOB_CSV",
+								"type": "DatasetReference",
+								"parameters": {
+									"FolderPath": ".",
+									"FileName": "ORDER_METHOD.csv"
+								}
+							},
+							"fieldList": [
+								"exists"
+							],
+							"storeSettings": {
+								"type": "AzureBlobStorageReadSettings",
+								"recursive": true,
+								"enablePartitionDiscovery": false
+							},
+							"formatSettings": {
+								"type": "DelimitedTextReadSettings"
+							}
+						}
+					},
+					{
+						"name": "IF_FILE_EXISTS",
+						"type": "IfCondition",
+						"dependsOn": [
+							{
+								"activity": "CHECK_FILE_EXISTS",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"userProperties": [],
+						"typeProperties": {
+							"expression": {
+								"value": "@activity('CHECK_FILE_EXISTS').output.exists",
+								"type": "Expression"
+							},
+							"ifFalseActivities": [
+								{
+									"name": "FAIL_FILE_NOT_FOUND",
+									"type": "Fail",
+									"dependsOn": [],
+									"userProperties": [],
+									"typeProperties": {
+										"message": "Flat file not received after 10 minutes wait. Pipeline failed.",
+										"errorCode": "FILE_NOT_FOUND"
+									}
+								}
+							],
+							"ifTrueActivities": [
+								{
+									"name": "EXT_FILE_To_RAW",
+									"type": "ExecutePipeline",
+									"dependsOn": [],
+									"policy": {
+										"secureInput": false
+									},
+									"userProperties": [],
+									"typeProperties": {
+										"pipeline": {
+											"referenceName": "PL_EXT_FILE_SRC_TO_RAW",
+											"type": "PipelineReference"
+										},
+										"waitOnCompletion": true,
+										"parameters": {}
+									}
+								},
+								{
+									"name": "INT_FILE_RAW_To_Ingestion",
+									"type": "ExecutePipeline",
+									"dependsOn": [
+										{
+											"activity": "EXT_FILE_To_RAW",
+											"dependencyConditions": [
+												"Succeeded"
+											]
+										}
+									],
+									"policy": {
+										"secureInput": false
+									},
+									"userProperties": [],
+									"typeProperties": {
+										"pipeline": {
+											"referenceName": "PL_INT_RAW_TO_INGESTION",
+											"type": "PipelineReference"
+										},
+										"waitOnCompletion": true,
+										"parameters": {}
+									}
+								},
+								{
+									"name": "INT_FILE_Ingestion_To_Integration",
+									"type": "ExecutePipeline",
+									"dependsOn": [
+										{
+											"activity": "INT_FILE_RAW_To_Ingestion",
+											"dependencyConditions": [
+												"Succeeded"
+											]
+										}
+									],
+									"policy": {
+										"secureInput": false
+									},
+									"userProperties": [],
+									"typeProperties": {
+										"pipeline": {
+											"referenceName": "PL_INT_INGESTION_TO_INTEGRATION",
+											"type": "PipelineReference"
+										},
+										"waitOnCompletion": true,
+										"parameters": {}
+									}
+								}
+							]
+						}
+					}
+				],
+				"policy": {
+					"elapsedTimeMetric": {}
+				},
+				"annotations": []
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/datasets/DS_BLOB_CSV')]",
+				"[concat(variables('factoryId'), '/pipelines/PL_EXT_FILE_SRC_TO_RAW')]",
+				"[concat(variables('factoryId'), '/pipelines/PL_INT_RAW_TO_INGESTION')]",
+				"[concat(variables('factoryId'), '/pipelines/PL_INT_INGESTION_TO_INTEGRATION')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/PL_MASTER_SQL_SRC')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"activities": [
+					{
+						"name": "EXT_SQL_To_RAW",
+						"type": "ExecutePipeline",
+						"dependsOn": [],
+						"policy": {
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"pipeline": {
+								"referenceName": "PL_EXT_SQL_SRC_TO_RAW_FULL",
+								"type": "PipelineReference"
+							},
+							"waitOnCompletion": true,
+							"parameters": {}
+						}
+					},
+					{
+						"name": "INT_RAW_To_Ingestion",
+						"type": "ExecutePipeline",
+						"dependsOn": [
+							{
+								"activity": "EXT_SQL_To_RAW",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"pipeline": {
+								"referenceName": "PL_INT_RAW_TO_INGESTION",
+								"type": "PipelineReference"
+							},
+							"waitOnCompletion": true,
+							"parameters": {}
+						}
+					},
+					{
+						"name": "INT_Ingestion_To_Integration",
+						"type": "ExecutePipeline",
+						"dependsOn": [
+							{
+								"activity": "INT_RAW_To_Ingestion",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"pipeline": {
+								"referenceName": "PL_INT_INGESTION_TO_INTEGRATION",
+								"type": "PipelineReference"
+							},
+							"waitOnCompletion": true,
+							"parameters": {}
+						}
+					}
+				],
+				"policy": {
+					"elapsedTimeMetric": {}
+				},
+				"annotations": []
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/pipelines/PL_EXT_SQL_SRC_TO_RAW_FULL')]",
+				"[concat(variables('factoryId'), '/pipelines/PL_INT_RAW_TO_INGESTION')]",
+				"[concat(variables('factoryId'), '/pipelines/PL_INT_INGESTION_TO_INTEGRATION')]"
+			]
+		},
+		{
 			"name": "[concat(parameters('factoryName'), '/DS_ADLS_BINARY_DELETE')]",
 			"type": "Microsoft.DataFactory/factories/datasets",
 			"apiVersion": "2018-06-01",
@@ -1062,6 +1686,24 @@
 			]
 		},
 		{
+			"name": "[concat(parameters('factoryName'), '/LS_ADB_SalesProject_MK')]",
+			"type": "Microsoft.DataFactory/factories/linkedServices",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"annotations": [],
+				"type": "AzureDatabricks",
+				"typeProperties": {
+					"domain": "https://adb-7405614158687236.16.azuredatabricks.net",
+					"accessToken": {
+						"type": "SecureString",
+						"value": "[parameters('LS_ADB_SalesProject_MK_accessToken')]"
+					},
+					"existingClusterId": "[parameters('LS_ADB_SalesProject_MK_properties_typeProperties_existingClusterId')]"
+				}
+			},
+			"dependsOn": []
+		},
+		{
 			"name": "[concat(parameters('factoryName'), '/LS_ADLS_SalesProject_MK')]",
 			"type": "Microsoft.DataFactory/factories/linkedServices",
 			"apiVersion": "2018-06-01",
@@ -1158,481 +1800,6 @@
 			},
 			"dependsOn": [
 				"[concat(variables('factoryId'), '/linkedServices/LS_KV_SalesProject_MK')]"
-			]
-		},
-		{
-			"name": "[concat(parameters('factoryName'), '/LS_ADB_SalesProject_MK')]",
-			"type": "Microsoft.DataFactory/factories/linkedServices",
-			"apiVersion": "2018-06-01",
-			"properties": {
-				"annotations": [],
-				"type": "AzureDatabricks",
-				"typeProperties": {
-					"domain": "https://adb-7405614158687236.16.azuredatabricks.net",
-					"accessToken": {
-						"type": "SecureString",
-						"value": "[parameters('LS_ADB_SalesProject_MK_accessToken')]"
-					},
-					"existingClusterId": "[parameters('LS_ADB_SalesProject_MK_properties_typeProperties_existingClusterId')]"
-				}
-			},
-			"dependsOn": []
-		},
-		{
-			"name": "[concat(parameters('factoryName'), '/PL_INT_RAW_TO_INGESTION')]",
-			"type": "Microsoft.DataFactory/factories/pipelines",
-			"apiVersion": "2018-06-01",
-			"properties": {
-				"activities": [
-					{
-						"name": "DBR_RAW_To_Ingestion",
-						"type": "DatabricksNotebook",
-						"dependsOn": [],
-						"policy": {
-							"timeout": "0.12:00:00",
-							"retry": 0,
-							"retryIntervalInSeconds": 30,
-							"secureOutput": false,
-							"secureInput": false
-						},
-						"userProperties": [],
-						"typeProperties": {
-							"notebookPath": "/Users/mayurkumbhar5100@gmail.com/IntelBi-Sales-Project/Sales Project/NB_RAW_TO_INGESTION"
-						},
-						"linkedServiceName": {
-							"referenceName": "LS_ADB_SalesProject_MK",
-							"type": "LinkedServiceReference"
-						}
-					},
-					{
-						"name": "SP_Log_RAW_Ingestion",
-						"type": "SqlServerStoredProcedure",
-						"dependsOn": [
-							{
-								"activity": "DBR_RAW_To_Ingestion",
-								"dependencyConditions": [
-									"Succeeded"
-								]
-							}
-						],
-						"policy": {
-							"timeout": "0.12:00:00",
-							"retry": 0,
-							"retryIntervalInSeconds": 30,
-							"secureOutput": false,
-							"secureInput": false
-						},
-						"userProperties": [],
-						"typeProperties": {
-							"storedProcedureName": "[[control].[usp_InsertTableLog]",
-							"storedProcedureParameters": {
-								"PipelineName": {
-									"value": {
-										"value": "@pipeline().Pipeline",
-										"type": "Expression"
-									},
-									"type": "String"
-								},
-								"PipelineRunID": {
-									"value": {
-										"value": "@pipeline().RunId",
-										"type": "Expression"
-									},
-									"type": "String"
-								},
-								"SourceName": {
-									"value": "RAW",
-									"type": "String"
-								},
-								"TargetName": {
-									"value": "Ingestion",
-									"type": "String"
-								},
-								"SourceCount": {
-									"value": "0",
-									"type": "Int32"
-								},
-								"TargetCount": {
-									"value": "0",
-									"type": "Int32"
-								},
-								"RejectCount": {
-									"value": "0",
-									"type": "Int32"
-								},
-								"Status": {
-									"value": "Success",
-									"type": "String"
-								},
-								"StartTime": {
-									"value": {
-										"value": "@pipeline().TriggerTime",
-										"type": "Expression"
-									},
-									"type": "DateTime"
-								},
-								"EndTime": {
-									"value": {
-										"value": "@utcNow()",
-										"type": "Expression"
-									},
-									"type": "DateTime"
-								}
-							}
-						},
-						"linkedServiceName": {
-							"referenceName": "LS_SQLDB_ASQL_Target",
-							"type": "LinkedServiceReference"
-						}
-					},
-					{
-						"name": "SP_Error_RAW_Ingestion",
-						"type": "SqlServerStoredProcedure",
-						"dependsOn": [
-							{
-								"activity": "DBR_RAW_To_Ingestion",
-								"dependencyConditions": [
-									"Failed"
-								]
-							}
-						],
-						"policy": {
-							"timeout": "0.12:00:00",
-							"retry": 0,
-							"retryIntervalInSeconds": 30,
-							"secureOutput": false,
-							"secureInput": false
-						},
-						"userProperties": [],
-						"typeProperties": {
-							"storedProcedureName": "[[control].[usp_InsertErrorLog]",
-							"storedProcedureParameters": {
-								"PipelineName": {
-									"value": {
-										"value": "@pipeline().Pipeline",
-										"type": "Expression"
-									},
-									"type": "String"
-								},
-								"PipelineRunID": {
-									"value": {
-										"value": "@pipeline().RunId",
-										"type": "Expression"
-									},
-									"type": "String"
-								},
-								"ActivityName": {
-									"value": "DBR_RAW_To_Ingestion",
-									"type": "String"
-								},
-								"ErrorMessage": {
-									"value": {
-										"value": "@activity('DBR_RAW_To_Ingestion').error.message",
-										"type": "Expression"
-									},
-									"type": "String"
-								},
-								"ErrorCode": {
-									"value": {
-										"value": "@activity('DBR_RAW_To_Ingestion').error.errorCode",
-										"type": "Expression"
-									},
-									"type": "String"
-								},
-								"SourceName": {
-									"value": "RAW",
-									"type": "String"
-								},
-								"TargetName": {
-									"value": "Ingestion",
-									"type": "String"
-								}
-							}
-						},
-						"linkedServiceName": {
-							"referenceName": "LS_SQLDB_ASQL_Target",
-							"type": "LinkedServiceReference"
-						}
-					}
-				],
-				"policy": {
-					"elapsedTimeMetric": {}
-				},
-				"annotations": []
-			},
-			"dependsOn": [
-				"[concat(variables('factoryId'), '/linkedServices/LS_ADB_SalesProject_MK')]",
-				"[concat(variables('factoryId'), '/linkedServices/LS_SQLDB_ASQL_Target')]"
-			]
-		},
-		{
-			"name": "[concat(parameters('factoryName'), '/PL_INT_INGESTION_TO_INTEGRATION')]",
-			"type": "Microsoft.DataFactory/factories/pipelines",
-			"apiVersion": "2018-06-01",
-			"properties": {
-				"activities": [
-					{
-						"name": "DBR_Ingestion_To_Integration",
-						"type": "DatabricksNotebook",
-						"dependsOn": [],
-						"policy": {
-							"timeout": "0.12:00:00",
-							"retry": 0,
-							"retryIntervalInSeconds": 30,
-							"secureOutput": false,
-							"secureInput": false
-						},
-						"userProperties": [],
-						"typeProperties": {
-							"notebookPath": "/Users/mayurkumbhar5100@gmail.com/IntelBi-Sales-Project/Sales Project/NB_INGESTION_TO_INTEGRATION"
-						},
-						"linkedServiceName": {
-							"referenceName": "LS_ADB_SalesProject_MK",
-							"type": "LinkedServiceReference"
-						}
-					},
-					{
-						"name": "SP_Log_Ingestion_Integration",
-						"type": "SqlServerStoredProcedure",
-						"dependsOn": [
-							{
-								"activity": "DBR_Ingestion_To_Integration",
-								"dependencyConditions": [
-									"Succeeded"
-								]
-							}
-						],
-						"policy": {
-							"timeout": "0.12:00:00",
-							"retry": 0,
-							"retryIntervalInSeconds": 30,
-							"secureOutput": false,
-							"secureInput": false
-						},
-						"userProperties": [],
-						"typeProperties": {
-							"storedProcedureName": "[[control].[usp_InsertTableLog]",
-							"storedProcedureParameters": {
-								"PipelineName": {
-									"value": {
-										"value": "@pipeline().Pipeline",
-										"type": "Expression"
-									},
-									"type": "String"
-								},
-								"PipelineRunID": {
-									"value": {
-										"value": "@pipeline().RunId",
-										"type": "Expression"
-									},
-									"type": "String"
-								},
-								"SourceName": {
-									"value": "Ingestion",
-									"type": "String"
-								},
-								"TargetName": {
-									"value": "Integration",
-									"type": "String"
-								},
-								"SourceCount": {
-									"value": "0",
-									"type": "Int32"
-								},
-								"TargetCount": {
-									"value": "0",
-									"type": "Int32"
-								},
-								"RejectCount": {
-									"value": "0",
-									"type": "Int32"
-								},
-								"Status": {
-									"value": "Success",
-									"type": "String"
-								},
-								"StartTime": {
-									"value": {
-										"value": "@pipeline().TriggerTime",
-										"type": "Expression"
-									},
-									"type": "DateTime"
-								},
-								"EndTime": {
-									"value": {
-										"value": "@utcNow()",
-										"type": "Expression"
-									},
-									"type": "DateTime"
-								}
-							}
-						},
-						"linkedServiceName": {
-							"referenceName": "LS_SQLDB_ASQL_Target",
-							"type": "LinkedServiceReference"
-						}
-					},
-					{
-						"name": "SP_Error_Ingestion_Integration",
-						"type": "SqlServerStoredProcedure",
-						"dependsOn": [
-							{
-								"activity": "DBR_Ingestion_To_Integration",
-								"dependencyConditions": [
-									"Failed"
-								]
-							}
-						],
-						"policy": {
-							"timeout": "0.12:00:00",
-							"retry": 0,
-							"retryIntervalInSeconds": 30,
-							"secureOutput": false,
-							"secureInput": false
-						},
-						"userProperties": [],
-						"typeProperties": {
-							"storedProcedureName": "[[control].[usp_InsertErrorLog]",
-							"storedProcedureParameters": {
-								"PipelineName": {
-									"value": {
-										"value": "@pipeline().Pipeline",
-										"type": "Expression"
-									},
-									"type": "String"
-								},
-								"PipelineRunID": {
-									"value": {
-										"value": "@pipeline().RunId",
-										"type": "Expression"
-									},
-									"type": "String"
-								},
-								"ActivityName": {
-									"value": "DBR_Ingestion_To_Integration",
-									"type": "String"
-								},
-								"ErrorMessage": {
-									"value": {
-										"value": "@activity('DBR_Ingestion_To_Integration').error.message",
-										"type": "Expression"
-									},
-									"type": "String"
-								},
-								"ErrorCode": {
-									"value": {
-										"value": "@activity('DBR_Ingestion_To_Integration').error.errorCode",
-										"type": "Expression"
-									},
-									"type": "String"
-								},
-								"SourceName": {
-									"value": "Ingestion",
-									"type": "String"
-								},
-								"TargetName": {
-									"value": "Integration",
-									"type": "String"
-								}
-							}
-						},
-						"linkedServiceName": {
-							"referenceName": "LS_SQLDB_ASQL_Target",
-							"type": "LinkedServiceReference"
-						}
-					}
-				],
-				"policy": {
-					"elapsedTimeMetric": {}
-				},
-				"annotations": []
-			},
-			"dependsOn": [
-				"[concat(variables('factoryId'), '/linkedServices/LS_ADB_SalesProject_MK')]",
-				"[concat(variables('factoryId'), '/linkedServices/LS_SQLDB_ASQL_Target')]"
-			]
-		},
-		{
-			"name": "[concat(parameters('factoryName'), '/PL_MASTER_SQL_SRC')]",
-			"type": "Microsoft.DataFactory/factories/pipelines",
-			"apiVersion": "2018-06-01",
-			"properties": {
-				"activities": [
-					{
-						"name": "EXT_SQL_To_RAW",
-						"type": "ExecutePipeline",
-						"dependsOn": [],
-						"policy": {
-							"secureInput": false
-						},
-						"userProperties": [],
-						"typeProperties": {
-							"pipeline": {
-								"referenceName": "PL_EXT_SQL_SRC_TO_RAW_FULL",
-								"type": "PipelineReference"
-							},
-							"waitOnCompletion": true,
-							"parameters": {}
-						}
-					},
-					{
-						"name": "INT_RAW_To_Ingestion",
-						"type": "ExecutePipeline",
-						"dependsOn": [
-							{
-								"activity": "EXT_SQL_To_RAW",
-								"dependencyConditions": [
-									"Succeeded"
-								]
-							}
-						],
-						"policy": {
-							"secureInput": false
-						},
-						"userProperties": [],
-						"typeProperties": {
-							"pipeline": {
-								"referenceName": "PL_INT_RAW_TO_INGESTION",
-								"type": "PipelineReference"
-							},
-							"waitOnCompletion": true,
-							"parameters": {}
-						}
-					},
-					{
-						"name": "INT_Ingestion_To_Integration",
-						"type": "ExecutePipeline",
-						"dependsOn": [
-							{
-								"activity": "INT_RAW_To_Ingestion",
-								"dependencyConditions": [
-									"Succeeded"
-								]
-							}
-						],
-						"policy": {
-							"secureInput": false
-						},
-						"userProperties": [],
-						"typeProperties": {
-							"pipeline": {
-								"referenceName": "PL_INT_INGESTION_TO_INTEGRATION",
-								"type": "PipelineReference"
-							},
-							"waitOnCompletion": true,
-							"parameters": {}
-						}
-					}
-				],
-				"policy": {
-					"elapsedTimeMetric": {}
-				},
-				"annotations": []
-			},
-			"dependsOn": [
-				"[concat(variables('factoryId'), '/pipelines/PL_EXT_SQL_SRC_TO_RAW_FULL')]",
-				"[concat(variables('factoryId'), '/pipelines/PL_INT_RAW_TO_INGESTION')]",
-				"[concat(variables('factoryId'), '/pipelines/PL_INT_INGESTION_TO_INTEGRATION')]"
 			]
 		}
 	]
