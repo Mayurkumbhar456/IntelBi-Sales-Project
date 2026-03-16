@@ -35,6 +35,7 @@
 						"referenceName": "DS_BLOB_CSV",
 						"type": "DatasetReference",
 						"parameters": {
+							"FolderPath": ".",
 							"FileName": "ORDER_METHOD.csv"
 						}
 					},
